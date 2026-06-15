@@ -247,6 +247,36 @@ const defaultQuotes = [
   }
 ];
 
+const defaultResearchInterests = [
+  {
+    title: "Political Ecology and Environmental Justice",
+    description: "Analyzing how political, economic, and social factors shape environmental policies, resource distribution, and climate justice for marginalized communities.",
+    iconName: "balance"
+  },
+  {
+    title: "Comparative International Relations (India–China–ASEAN Nexus)",
+    description: "Investigating the complex geopolitical dynamics, trade corridor alignments, and security relationships defining the strategic Southern Asian landscape.",
+    iconName: "public"
+  },
+  {
+    title: "Democratisation and Social Justice",
+    description: "Exploring pathways of institutional reform, political representation, and democratic consolidation to ensure marginal voices are represented.",
+    iconName: "gavel"
+  },
+  {
+    title: "Future of Politics Amidst Disruptive Technologies and the Digital Divide",
+    description: "Examining the sociopolitical consequences of rapid technological expansion and how the digital divide impacts modern governance.",
+    iconName: "devices"
+  },
+  {
+    title: "Maritime Relations in the Indo-Pacific and Naval Diplomacy",
+    description: "Studying oceanic trade corridors, blue economy initiatives, and naval security cooperation to promote regional stability and ecological stewardship.",
+    iconName: "anchor"
+  }
+];
+
+const defaultKeyFocusMap = {};
+
 // Sub-component for Typewriter Quote to isolate high-frequency state updates
 function TypewriterQuote({ quotes }) {
   const activeQuotes = quotes && quotes.length > 0 ? quotes : defaultQuotes;
@@ -324,7 +354,7 @@ function TypewriterQuote({ quotes }) {
         <span className="absolute left-6 top-3 text-5xl md:text-6xl text-olive/10 font-serif-italic select-none pointer-events-none">“</span>
 
         <p className="font-serif-italic text-base md:text-lg text-olive leading-relaxed relative z-10 min-h-[100px] sm:min-h-[75px] md:min-h-[55px]">
-          '{activeQuotes[activeQuoteIdx]?.word}' — <span className="text-gold-accent font-sans-ultra-bold font-normal not-italic tracking-wider px-1.5 py-0.5 bg-gold-accent/5 rounded-lg border border-gold-accent/10 text-[10px] md:text-xs">{activeQuotes[activeQuoteIdx]?.lang}</span> {displayedText}
+          {displayedText}
           <span className="inline-block w-[3px] h-4 ml-1 bg-olive/70 animate-pulse align-middle"></span>
         </p>
       </div>
@@ -592,6 +622,26 @@ export default function Home() {
         }
       );
     }
+    // Research Interests Cards Fade In (Optimized: per-card trigger for mobile viewport scrolling)
+    const interestCards = gsap.utils.toArray(".interest-card-item");
+    if (interestCards.length > 0) {
+      interestCards.forEach((card) => {
+        gsap.fromTo(card,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: card,
+              start: "top 90%",
+              toggleActions: "play none none none"
+            }
+          }
+        );
+      });
+    }
 
     // VIP Projects Cards Fade In
     const vipCards = gsap.utils.toArray(".vip-card-item");
@@ -667,10 +717,23 @@ export default function Home() {
   // Helper for Interest Icons
   function getInterestIcon(iconName) {
     switch (iconName?.toLowerCase()) {
-      case "globe": return "public";
-      case "shieldcheck": return "gavel";
-      case "leaf": return "eco";
-      default: return "eco";
+      case "globe":
+      case "public":
+        return "public";
+      case "shieldcheck":
+      case "gavel":
+        return "gavel";
+      case "leaf":
+      case "eco":
+        return "eco";
+      case "balance":
+        return "balance";
+      case "devices":
+        return "devices";
+      case "anchor":
+        return "anchor";
+      default:
+        return iconName || "balance";
     }
   }
 
@@ -682,6 +745,31 @@ export default function Home() {
   const philosophyImage = corePhilosophy.philosophyImage || "/philosophy_image.jpeg";
   const philosophyQuotes = corePhilosophy.quotes && corePhilosophy.quotes.length > 0 ? corePhilosophy.quotes : defaultQuotes;
   const researchInterests = data?.researchInterests || [];
+
+  // Match and merge DB interests with defaults to ensure full content (descriptions and bullets) is always visible
+  const mergedInterests = defaultResearchInterests.map(defInterest => {
+    const dbInterest = researchInterests.find(
+      i => i.title?.trim().toLowerCase() === defInterest.title?.trim().toLowerCase()
+    );
+    return {
+      ...defInterest,
+      ...(dbInterest || {}),
+      description: dbInterest?.description || defInterest.description,
+      keyFocus: dbInterest?.keyFocus || defInterest.keyFocus || defaultKeyFocusMap[defInterest.title] || []
+    };
+  });
+
+  // Append any other interests from DB that don't match the defaults
+  const otherDbInterests = researchInterests.filter(
+    dbInterest => !defaultResearchInterests.some(
+      defInterest => defInterest.title?.trim().toLowerCase() === dbInterest.title?.trim().toLowerCase()
+    )
+  ).map(dbInterest => ({
+    ...dbInterest,
+    keyFocus: dbInterest.keyFocus || defaultKeyFocusMap[dbInterest.title] || []
+  }));
+
+  const researchInterestsList = [...mergedInterests, ...otherDbInterests];
   const timelineEvents = data?.academicBackground || [];
   const researchPapers = data?.papers || [];
   const intellectualVistas = data?.vistas || [];
@@ -712,8 +800,8 @@ export default function Home() {
 
               <div className="hidden md:flex items-center bg-charcoal/5 rounded-full p-1 border border-charcoal/5">
                 <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#intro">Home</a>
-                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-papers">Research areas</a>
-                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#projects">Research In Reach</a>
+                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-interests">Research Interests</a>
+                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-papers">Explore Work</a>
                 <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#blogs">Blog section</a>
                 <a
                   className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300"
@@ -759,16 +847,16 @@ export default function Home() {
                 <a
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-4 py-2.5 rounded-2xl font-sans font-medium text-base text-charcoal hover:bg-charcoal/5 transition-all text-center"
-                  href="#research-papers"
+                  href="#research-interests"
                 >
-                  Research areas
+                  Research Interests
                 </a>
                 <a
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-4 py-2.5 rounded-2xl font-sans font-medium text-base text-charcoal hover:bg-charcoal/5 transition-all text-center"
-                  href="#projects"
+                  href="#research-papers"
                 >
-                  Research In Reach
+                  Explore Work
                 </a>
                 <a
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -1099,6 +1187,86 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Research Interests Section */}
+      <section className="section-padding bg-cream-lightest relative overflow-hidden" id="research-interests">
+        {/* Subtle decorative background circles */}
+        <div className="absolute -left-32 top-10 w-96 h-96 bg-cream-medium/20 rounded-full blur-3xl z-0 pointer-events-none"></div>
+        <div className="absolute -right-32 bottom-10 w-96 h-96 bg-cream-medium/25 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
+          {/* Centered Section Header */}
+          <div className="max-w-3xl mx-auto text-center mb-10 md:mb-16">
+            <span className="font-label-md text-gold-accent uppercase tracking-widest text-xs font-bold block mb-3">Areas of Inquiry</span>
+            <h2 className="font-headline-lg text-4xl md:text-5xl text-charcoal font-extrabold uppercase tracking-wider leading-tight">Research Interests</h2>
+            <div className="w-16 h-1 bg-olive/45 mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          {/* Grid of Different Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6 md:gap-8 justify-center">
+            {researchInterestsList.map((interest, idx) => {
+              const interestIcons = [
+                "balance",
+                "public",
+                "gavel",
+                "devices",
+                "anchor"
+              ];
+              const currentIcon = getInterestIcon(interest.iconName || interestIcons[idx % interestIcons.length]);
+
+              // Cooperative pastel gradient borders/glows for each different card
+              const cardStyles = [
+                "from-pastel-blue/25 to-white/40 border-pastel-blue/20 hover:border-pastel-blue/45",
+                "from-pastel-pink/25 to-white/40 border-pastel-pink/20 hover:border-pastel-pink/45",
+                "from-pastel-mint/25 to-white/40 border-pastel-mint/20 hover:border-pastel-mint/45",
+                "from-pastel-purple/25 to-white/40 border-pastel-purple/20 hover:border-pastel-purple/45",
+                "from-pastel-yellow/30 to-white/40 border-gold-accent/20 hover:border-gold-accent/45"
+              ];
+              const styles = cardStyles[idx % cardStyles.length];
+
+              return (
+                <div
+                  key={interest._id || idx}
+                  className={`interest-card-item glassmorphism-premium bg-gradient-to-br ${styles} p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] hover:-translate-y-1.5 hover:shadow-xl hover:bg-[#FFFDF9] transition-all duration-300 border flex flex-col items-start text-left gap-3 md:gap-6 min-h-[170px] sm:min-h-[200px] cursor-default select-text group`}
+                >
+                  {/* Custom Bullet Icon Badge */}
+                  <div className="shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/80 border border-charcoal/5 flex items-center justify-center text-olive shadow-xs transition-all duration-300 group-hover:bg-olive group-hover:text-cream-lightest group-hover:scale-115">
+                    <span className="material-symbols-outlined text-xl sm:text-2xl">{currentIcon}</span>
+                  </div>
+
+                  {/* Content Text */}
+                  <div className="pt-1 flex-grow space-y-2.5 sm:space-y-3">
+                    <h3 className="font-sans-ultra-bold text-sm sm:text-base md:text-lg text-charcoal leading-snug uppercase tracking-wide group-hover:text-olive transition-colors duration-300">
+                      {interest.title}
+                    </h3>
+                    {interest.description && (
+                      <p className="font-sans text-[11px] sm:text-xs md:text-sm text-charcoal-light leading-relaxed">
+                        {interest.description}
+                      </p>
+                    )}
+                    {/* Key Focus Bullet List */}
+                    {(() => {
+                      const keyFocusList = interest.keyFocus || defaultKeyFocusMap[interest.title] || [];
+                      if (keyFocusList.length > 0) {
+                        return (
+                          <ul className="mt-4 space-y-2 text-xs md:text-sm text-charcoal-light font-sans text-left pl-1">
+                            {keyFocusList.map((focus, fIdx) => (
+                              <li key={fIdx} className="flex items-start gap-2.5 leading-relaxed">
+                                <span className="w-1.5 h-1.5 rounded-full bg-olive/50 group-hover:bg-olive transition-colors duration-300 mt-2 shrink-0"></span>
+                                <span>{focus}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* Research Papers */}
       <section className="section-padding premium-glow-alt-2 relative overflow-hidden" id="research-papers">
