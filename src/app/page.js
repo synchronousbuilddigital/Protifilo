@@ -801,7 +801,7 @@ export default function Home() {
               <div className="hidden md:flex items-center bg-charcoal/5 rounded-full p-1 border border-charcoal/5">
                 <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#intro">Home</a>
                 <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-interests">Research Interests</a>
-                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-papers">Explore Work</a>
+                <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#research-papers">Explore Works</a>
                 <a className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300" href="#blogs">Blog section</a>
                 <a
                   className="px-4 py-1.5 rounded-full font-sans font-medium text-xs tracking-wide text-charcoal hover:bg-white hover:shadow-sm transition-all duration-300"
@@ -856,7 +856,7 @@ export default function Home() {
                   className="px-4 py-2.5 rounded-2xl font-sans font-medium text-base text-charcoal hover:bg-charcoal/5 transition-all text-center"
                   href="#research-papers"
                 >
-                  Explore Work
+                  Explore Works
                 </a>
                 <a
                   onClick={() => setIsMobileMenuOpen(false)}
