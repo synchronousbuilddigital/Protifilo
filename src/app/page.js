@@ -403,6 +403,64 @@ export default function Home() {
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Subscribe states
+  const [subscribeName, setSubscribeName] = useState("");
+  const [subscribeEmail, setSubscribeEmail] = useState("");
+  const [subscribeStatus, setSubscribeStatus] = useState("idle"); // idle, submitting, success, error
+  const [subscribeErrorMsg, setSubscribeErrorMsg] = useState("");
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    setSubscribeErrorMsg("");
+
+    if (!subscribeName.trim()) {
+      setSubscribeErrorMsg("Please enter your name.");
+      setSubscribeStatus("error");
+      return;
+    }
+
+    if (!subscribeEmail.trim()) {
+      setSubscribeErrorMsg("Please enter your email.");
+      setSubscribeStatus("error");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(subscribeEmail.trim())) {
+      setSubscribeErrorMsg("Please enter a valid email address.");
+      setSubscribeStatus("error");
+      return;
+    }
+
+    setSubscribeStatus("submitting");
+
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: subscribeName.trim(),
+          email: subscribeEmail.trim(),
+        }),
+      });
+
+      const json = await res.json();
+
+      if (json.success) {
+        setSubscribeStatus("success");
+        setSubscribeName("");
+        setSubscribeEmail("");
+      } else {
+        setSubscribeErrorMsg(json.error || "Failed to subscribe. Please try again.");
+        setSubscribeStatus("error");
+      }
+    } catch (err) {
+      console.error("Subscription submission error:", err);
+      setSubscribeErrorMsg("A network issue occurred. Please check your connection and try again.");
+      setSubscribeStatus("error");
+    }
+  };
+
   // References for light effect
   const containerRef = useRef();
   const lightEffectRef = useRef();
@@ -1799,6 +1857,114 @@ export default function Home() {
               <p className="text-center text-charcoal-light py-8">No blogs published yet.</p>
             </div>
           )}
+        </div>
+      </section>
+
+
+      {/* Subscribe Section */}
+      <section className="section-padding relative overflow-hidden bg-cream-medium/40 border-t border-olive/10" id="subscribe">
+        {/* Subtle decorative background circles */}
+        <div className="absolute -left-32 top-10 w-96 h-96 bg-pastel-blue/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+        <div className="absolute -right-32 bottom-10 w-96 h-96 bg-pastel-pink/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
+
+        <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop relative z-10">
+          <div className="max-w-2xl mx-auto text-center mb-10">
+            <span className="material-symbols-outlined text-4xl text-olive mb-4 block" style={{ fontVariationSettings: "'FILL' 0" }}>mail</span>
+            <span className="font-label-md text-gold-accent uppercase tracking-widest text-xs font-bold block mb-2">Ecological Dispatch</span>
+            <h2 className="font-headline-lg text-3xl md:text-4xl text-charcoal font-extrabold uppercase tracking-wider leading-tight">Subscribe to Updates</h2>
+            <p className="font-serif-italic text-sm text-charcoal-light mt-3 max-w-lg mx-auto">
+              Receive email notifications as soon as new articles, research updates, or blog stories are published.
+            </p>
+            <div className="w-16 h-0.5 bg-olive/30 mx-auto mt-5 rounded-full"></div>
+          </div>
+
+          <div className="max-w-md mx-auto">
+            <div className="glassmorphism-premium rounded-[2.5rem] p-8 border border-charcoal/10 shadow-md bg-white/40">
+              {subscribeStatus === "success" ? (
+                <div className="text-center py-6 space-y-4 animate-scale-up">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400/30 flex items-center justify-center text-emerald-600 shadow-sm">
+                    <span className="material-symbols-outlined text-3xl">check_circle</span>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-sans-ultra-bold text-lg text-charcoal uppercase">Subscribed Successfully!</h3>
+                    <p className="font-sans text-xs text-charcoal-light leading-relaxed">
+                      Thank you for subscribing! You will now receive mail alerts when new articles are uploaded.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubscribeStatus("idle")}
+                    className="mt-4 px-5 py-2 border border-olive/35 text-olive hover:bg-olive/5 rounded-full font-sans font-bold text-[9px] uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    Subscribe Another Email
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubscribe} className="space-y-4">
+                  {/* Name Input */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-sans font-extrabold tracking-widest text-charcoal-light/75 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">person</span>
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Jahnvi Sharma"
+                      value={subscribeName}
+                      onChange={(e) => setSubscribeName(e.target.value)}
+                      disabled={subscribeStatus === "submitting"}
+                      className="w-full rounded-xl border border-charcoal/10 bg-white/60 px-4 py-2.5 text-xs text-charcoal placeholder:text-charcoal-light/45 focus:border-olive focus:bg-white focus:outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Email Input */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-sans font-extrabold tracking-widest text-charcoal-light/75 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">mail</span>
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. jahnvi@outlook.com"
+                      value={subscribeEmail}
+                      onChange={(e) => setSubscribeEmail(e.target.value)}
+                      disabled={subscribeStatus === "submitting"}
+                      className="w-full rounded-xl border border-charcoal/10 bg-white/60 px-4 py-2.5 text-xs text-charcoal placeholder:text-charcoal-light/45 focus:border-olive focus:bg-white focus:outline-none transition-all duration-300"
+                    />
+                  </div>
+
+                  {/* Error Message */}
+                  {subscribeStatus === "error" && subscribeErrorMsg && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700 text-xs font-semibold flex items-center gap-1.5 font-sans leading-normal">
+                      <span className="material-symbols-outlined text-xs shrink-0">error</span>
+                      {subscribeErrorMsg}
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={subscribeStatus === "submitting"}
+                      className="w-full py-3 bg-gradient-to-r from-charcoal to-charcoal-light text-cream-lightest rounded-xl font-sans font-bold text-[9px] tracking-widest uppercase hover:shadow-md disabled:opacity-50 disabled:pointer-events-none transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer border border-charcoal/20"
+                    >
+                      {subscribeStatus === "submitting" ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin text-sm">sync</span>
+                          Registering...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-sm">notifications_active</span>
+                          Subscribe Now
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

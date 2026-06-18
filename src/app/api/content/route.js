@@ -12,8 +12,10 @@ import {
   Blog,
   Certificate,
   ResearchProject,
-  VipProject
+  VipProject,
+  Subscriber
 } from "@/models/Portfolio";
+import { sendBlogNotification } from "@/lib/notifications";
 
 const AUTH_COOKIE_NAME = "auth_token";
 const SESSION_VALUE = "authenticated_jahnvi_session_token";
@@ -194,6 +196,15 @@ export async function POST(request) {
           }
           blog = new Blog(payload);
           await blog.save();
+
+          // Fetch all subscribers and trigger notification
+          try {
+            const subscribers = await Subscriber.find();
+            // Send asynchronously to avoid blocking API response
+            sendBlogNotification(blog, subscribers);
+          } catch (notificationErr) {
+            console.error("Failed to query subscribers for blog notification:", notificationErr);
+          }
         }
         return NextResponse.json({ success: true, data: blog });
       }

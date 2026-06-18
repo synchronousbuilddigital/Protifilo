@@ -144,6 +144,12 @@ const VipProjectSchema = new mongoose.Schema({
   showOnHome: { type: Boolean, default: true }
 }, { timestamps: true });
 
+// --- SUBSCRIBER MODEL ---
+const SubscriberSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true }
+}, { timestamps: true });
+
 // Export Mongoose models safely (checking if they are already compiled during Next.js serverless HMR reloads)
 export const Profile = mongoose.models.Profile || mongoose.model("Profile", ProfileSchema);
 export const AcademicMilestone = mongoose.models.AcademicMilestone || mongoose.model("AcademicMilestone", AcademicMilestoneSchema);
@@ -156,3 +162,4 @@ export const AssetImage = mongoose.models.AssetImage || mongoose.model("AssetIma
 export const ContactMessage = mongoose.models.ContactMessage || mongoose.model("ContactMessage", ContactMessageSchema);
 export const ResearchProject = mongoose.models.ResearchProject || mongoose.model("ResearchProject", ResearchProjectSchema);
 export const VipProject = mongoose.models.VipProject || mongoose.model("VipProject", VipProjectSchema);
+export const Subscriber = mongoose.models.Subscriber || mongoose.model("Subscriber", SubscriberSchema);
