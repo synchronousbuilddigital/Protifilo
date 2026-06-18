@@ -39,7 +39,7 @@ export async function GET() {
       profile = await Profile.create({
         name: "Jahnvi",
         title: "Researcher & Writer",
-        tagline: "Exploring Political Ecology, Green Governance & Sustainable Development"
+        tagline: "Exploring Political Ecology, Green Governance & Sustainable Developments"
       });
     }
 
@@ -244,7 +244,7 @@ export async function POST(request) {
         await ResearchProject.findByIdAndDelete(payload.id);
         return NextResponse.json({ success: true, message: "Project deleted" });
       }
-      
+
       // --- VIP PROJECT ACTIONS ---
       case "save_vip": {
         let vip;
