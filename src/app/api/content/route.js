@@ -32,8 +32,30 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // Fetch all records, sorted where applicable
-    let profile = await Profile.findOne();
+    // Fetch all records in parallel to minimize response latency
+    const [
+      profileResult,
+      academicBackground,
+      researchInterests,
+      papers,
+      vistas,
+      blogs,
+      certificates,
+      projects,
+      vipProjects
+    ] = await Promise.all([
+      Profile.findOne(),
+      AcademicMilestone.find().sort({ order: 1 }),
+      ResearchInterest.find().sort({ order: 1 }),
+      ResearchPaper.find().sort({ order: 1 }),
+      Vista.find().sort({ order: 1 }),
+      Blog.find().sort({ date: -1 }),
+      Certificate.find().sort({ order: 1 }),
+      ResearchProject.find().sort({ order: 1 }),
+      VipProject.find().sort({ order: 1 })
+    ]);
+
+    let profile = profileResult;
     if (!profile) {
       // Create a default profile document if empty
       profile = await Profile.create({
@@ -42,15 +64,6 @@ export async function GET() {
         tagline: "Exploring Political Ecology, Green Governance & Sustainable Developments"
       });
     }
-
-    const academicBackground = await AcademicMilestone.find().sort({ order: 1 });
-    const researchInterests = await ResearchInterest.find().sort({ order: 1 });
-    const papers = await ResearchPaper.find().sort({ order: 1 });
-    const vistas = await Vista.find().sort({ order: 1 });
-    const blogs = await Blog.find().sort({ date: -1 });
-    const certificates = await Certificate.find().sort({ order: 1 });
-    const projects = await ResearchProject.find().sort({ order: 1 });
-    const vipProjects = await VipProject.find().sort({ order: 1 });
 
     return NextResponse.json({
       success: true,

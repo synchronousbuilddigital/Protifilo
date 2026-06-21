@@ -9,6 +9,7 @@ import {
   Save,
   LogOut,
   User,
+  Users,
   GraduationCap,
   BookOpen,
   Globe,
@@ -279,6 +280,11 @@ export default function AdminDashboard() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
+  // Subscribers state
+  const [subscribers, setSubscribers] = useState([]);
+  const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+  const [subscriberSearch, setSubscriberSearch] = useState("");
+
   // Modals / Editors state
   const [editItem, setEditItem] = useState(null);
   const [showModal, setShowModal] = useState(null); // 'milestone' | 'paper' | 'vista' | 'blog' | 'certificate'
@@ -365,6 +371,7 @@ export default function AdminDashboard() {
           setAuthenticated(true);
           fetchContent();
           fetchMessages();
+          fetchSubscribers();
         }
       } catch (err) {
         console.error("Auth check failed:", err);
@@ -408,6 +415,44 @@ export default function AdminDashboard() {
       setLoadingMessages(false);
     }
   }
+
+  // Fetch subscribers list
+  async function fetchSubscribers() {
+    setLoadingSubscribers(true);
+    try {
+      const res = await fetch("/api/subscribe");
+      const json = await res.json();
+      if (json.success) {
+        setSubscribers(json.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to load subscribers:", err);
+      showStatus("error", "Failed to load subscribers");
+    } finally {
+      setLoadingSubscribers(false);
+    }
+  }
+
+  // Delete a subscriber
+  const handleDeleteSubscriber = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this subscriber?")) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/subscribe?id=${id}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setSubscribers(prev => prev.filter(sub => sub._id !== id));
+        showStatus("success", "Subscriber successfully removed!");
+      } else {
+        showStatus("error", json.error || "Failed to remove subscriber");
+      }
+    } catch (err) {
+      showStatus("error", "Network connection error");
+    }
+  };
 
   // Toggle read status of a message
   const handleToggleRead = async (message) => {
@@ -725,11 +770,14 @@ export default function AdminDashboard() {
             { id: "vista", label: "Global Vistas", icon: Globe },
             { id: "blog", label: "Philosophy Blogs", icon: FileText },
             { id: "certificate", label: "Certificates", icon: Award },
-            { id: "messages", label: "Inquiries Inbox", icon: Mail }
+            { id: "messages", label: "Inquiries Inbox", icon: Mail },
+            { id: "subscribers", label: "Subscribers", icon: Users }
           ].map((tab) => {
             const Icon = tab.icon;
             const isInbox = tab.id === "messages";
+            const isSubscribers = tab.id === "subscribers";
             const unreadCount = isInbox ? messages.filter(m => !m.read).length : 0;
+            const subCount = isSubscribers ? subscribers.length : 0;
             return (
               <button
                 key={tab.id}
@@ -748,6 +796,14 @@ export default function AdminDashboard() {
                 {isInbox && unreadCount > 0 && (
                   <span className="ml-auto bg-red-600 text-cream-lightest text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-3xs">
                     {unreadCount}
+                  </span>
+                )}
+                {isSubscribers && subCount > 0 && (
+                  <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full border transition-all ${activeTab === "subscribers"
+                      ? "bg-[#FFFDF9]/20 border-[#FFFDF9]/30 text-cream-lightest"
+                      : "bg-olive/10 border-olive/20 text-olive"
+                    }`}>
+                    {subCount}
                   </span>
                 )}
               </button>
@@ -1866,6 +1922,119 @@ export default function AdminDashboard() {
 
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* --- TAB CONTENT: SUBSCRIBERS --- */}
+              {activeTab === "subscribers" && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-cream-medium/50 p-4 border border-olive/5 rounded-xl gap-4 text-left">
+                    <div>
+                      <h2 className="font-serif text-lg font-bold text-charcoal">Ecosystem Subscribers</h2>
+                      <p className="text-xs text-warm-gray">Manage and view readers who subscribed to your blog notifications</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        placeholder="Search name or email..."
+                        value={subscriberSearch}
+                        onChange={(e) => setSubscriberSearch(e.target.value)}
+                        className="rounded-lg border border-olive/25 bg-cream px-3 py-1.5 text-xs text-charcoal placeholder-slate-500 focus:border-olive focus:outline-none w-48 sm:w-64"
+                      />
+                      <button
+                        onClick={fetchSubscribers}
+                        disabled={loadingSubscribers}
+                        className="flex items-center gap-1.5 rounded-lg border border-olive/10 bg-olive/5 px-3 py-1.5 text-xs font-semibold text-charcoal hover:bg-olive/10 cursor-pointer disabled:opacity-50"
+                      >
+                        <span className={`material-symbols-outlined text-sm ${loadingSubscribers ? "animate-spin" : ""}`}>sync</span>
+                        Refresh
+                      </button>
+                    </div>
+                  </div>
+
+                  {loadingSubscribers ? (
+                    <div className="flex h-48 items-center justify-center rounded-xl bg-cream-dark/10 border border-olive/5">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-olive/20 border-t-olive"></div>
+                    </div>
+                  ) : (() => {
+                    const filteredSubscribers = subscribers.filter(sub => 
+                      (sub.name || "").toLowerCase().includes(subscriberSearch.toLowerCase()) || 
+                      (sub.email || "").toLowerCase().includes(subscriberSearch.toLowerCase())
+                    );
+
+                    if (filteredSubscribers.length === 0) {
+                      return (
+                        <div className="flex flex-col items-center justify-center p-12 glassmorphism rounded-xl border border-olive/10 text-center space-y-3">
+                          <div className="w-12 h-12 rounded-full bg-olive/10 flex items-center justify-center text-olive mx-auto">
+                            <Users className="h-6 w-6" />
+                          </div>
+                          <h3 className="font-serif text-base font-bold text-charcoal">No Subscribers Found</h3>
+                          <p className="text-xs text-warm-gray max-w-sm">
+                            {subscriberSearch ? "No subscribers match your search term." : "When readers subscribe from your homepage newsletter form, they will appear here."}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="glassmorphism rounded-xl border border-olive/10 overflow-hidden shadow-xs text-left">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-cream-dark/30 border-b border-olive/10">
+                                <th className="p-4 text-xs font-bold uppercase tracking-wider text-charcoal">Name</th>
+                                <th className="p-4 text-xs font-bold uppercase tracking-wider text-charcoal">Email Address</th>
+                                <th className="p-4 text-xs font-bold uppercase tracking-wider text-charcoal">Subscribed Date</th>
+                                <th className="p-4 text-xs font-bold uppercase tracking-wider text-charcoal text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-olive/5">
+                              {filteredSubscribers.map((sub) => {
+                                const formattedDate = new Date(sub.createdAt).toLocaleString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                });
+
+                                return (
+                                  <tr key={sub._id} className="hover:bg-cream-medium/20 transition-colors">
+                                    <td className="p-4 text-sm font-semibold text-charcoal flex items-center gap-2">
+                                      <div className="h-7 w-7 rounded-full bg-olive/10 flex items-center justify-center text-olive">
+                                        <User className="h-3.5 w-3.5" />
+                                      </div>
+                                      {sub.name}
+                                    </td>
+                                    <td className="p-4 text-sm">
+                                      <a
+                                        href={`mailto:${sub.email}`}
+                                        className="text-olive hover:text-olive-dark underline font-medium transition-colors"
+                                      >
+                                        {sub.email}
+                                      </a>
+                                    </td>
+                                    <td className="p-4 text-xs text-warm-gray">
+                                      {formattedDate}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                      <button
+                                        onClick={() => handleDeleteSubscriber(sub._id)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-charcoal border border-red-500/20 px-3 py-1.5 text-xs font-bold transition-all cursor-pointer"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        Remove
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </>

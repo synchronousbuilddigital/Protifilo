@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import dbConnect from "@/lib/db";
 import { Subscriber } from "@/models/Portfolio";
 import { sendSubscriptionConfirmation } from "@/lib/notifications";
+
+const AUTH_COOKIE_NAME = "auth_token";
+const SESSION_VALUE = "authenticated_jahnvi_session_token";
+
+async function verifySession() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME);
+  return token && token.value === SESSION_VALUE;
+}
 
 export async function POST(request) {
   try {
@@ -56,5 +66,54 @@ export async function POST(request) {
   } catch (error) {
     console.error("Subscription API error:", error);
     return NextResponse.json({ success: false, error: "Failed to process subscription. Please try again." }, { status: 500 });
+  }
+}
+
+// GET all subscribers (Admin only)
+export async function GET() {
+  try {
+    const isAuthenticated = await verifySession();
+    if (!isAuthenticated) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await dbConnect();
+    const subscribers = await Subscriber.find().sort({ createdAt: -1 });
+
+    return NextResponse.json({
+      success: true,
+      data: subscribers
+    });
+  } catch (error) {
+    console.error("GET Subscribers error:", error);
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// DELETE a subscriber (Admin only)
+export async function DELETE(request) {
+  try {
+    const isAuthenticated = await verifySession();
+    if (!isAuthenticated) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await dbConnect();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Subscriber ID is required" }, { status: 400 });
+    }
+
+    await Subscriber.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Subscriber deleted successfully."
+    });
+  } catch (error) {
+    console.error("DELETE Subscriber error:", error);
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
