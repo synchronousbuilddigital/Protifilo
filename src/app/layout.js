@@ -35,6 +35,8 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/logo2.ico" type="image/x-icon" sizes="any" />
         <link rel="shortcut icon" href="/logo2.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/logo2.png" />
+        <link rel="preload" as="image" href="/logo2.png" />
+        <link rel="preload" as="image" href="/hero1.png" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
         <script dangerouslySetInnerHTML={{
           __html: `

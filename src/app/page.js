@@ -480,7 +480,35 @@ export default function Home() {
         setLoading(false);
       }
     }
-    fetchData();
+
+    let timeoutId = null;
+    let idleId = null;
+
+    const scheduleFetch = () => {
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(fetchData, { timeout: 1500 });
+      } else {
+        timeoutId = window.setTimeout(fetchData, 300);
+      }
+    };
+
+    if (typeof window !== "undefined" && document.readyState === "complete") {
+      scheduleFetch();
+    } else if (typeof window !== "undefined") {
+      window.addEventListener("load", scheduleFetch, { once: true });
+    }
+
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      if (idleId !== null && typeof window !== "undefined" && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("load", scheduleFetch);
+      }
+    };
   }, []);
 
   // Mouse follower effect (completely disabled on mobile/touch screens to maximize scroll performance)
@@ -851,6 +879,9 @@ export default function Home() {
                 <img
                   src="/logo2.png"
                   alt="Jahnvi Logo"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                   className="h-14 w-auto object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-md"
                   style={{ filter: "contrast(1.2) brightness(0.88) saturate(1.1)" }}
                 />
@@ -969,6 +1000,9 @@ export default function Home() {
             <img
               alt={profile?.name || "Jahnvi"}
               id="hero-image"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="relative z-10 w-full max-w-[360px] lg:max-w-[420px] h-[80vh] object-cover object-top select-none transition-transform duration-700 hover:scale-[1.015]"
               src={
                 profile?.avatarUrl
